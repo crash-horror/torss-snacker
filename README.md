@@ -1,6 +1,9 @@
 # torss-snacker
 Scan in an easy to read list, RSS feeds for torrents, magnet links and more.
 
+![Imgur](http://i.imgur.com/LaO1B5N.png)
+
+
 ----------
 
  - <b>Click</b> on a list item to open browser or magnet link.
