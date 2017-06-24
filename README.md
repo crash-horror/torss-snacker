@@ -29,6 +29,7 @@ Edit <b>tor.config.ini</b> file to set options:
  - Red list items.
  - Yellow list items.
  - Gray list items.
+ - Purple list items.
  - Set the <b>refresh interval</b> (default = 5 minutes).
 
 
