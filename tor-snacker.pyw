@@ -495,6 +495,7 @@ class MyMainWindow(QMainWindow):
                             <li>Red list items.</li>
                             <li>Yellow list items.</li>
                             <li>Gray list items.</li>
+                            <li>Purple list items.</li>
                             <li>Set the <b>refresh interval</b> (default = 5 minutes).</li>
                         </ul>
                     </li>
