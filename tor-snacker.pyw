@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
                              QCheckBox, qApp, QMessageBox)
 
 
-version = 0.297
+version = 0.298
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -473,6 +473,7 @@ class MyMainWindow(QMainWindow):
 
 
     def info_action(self):
+
         QMessageBox.about(self, "About '" + title + "'",
                 """
                 <h3>Usage instructions and stuff:</h3>
@@ -498,8 +499,11 @@ class MyMainWindow(QMainWindow):
                         </ul>
                     </li>
                 </ul>
+                <h3>
+                    <a href='https://github.com/crash-horror/torss-snacker'>Buy me a beer!</a> (scroll to the bottom.)
+                </h3>
                 <p>
-                    <b>Disclaimer:</b> Use this Software at your own risk, downloading copyrighted material is illegal.
+                    <b>Disclaimer:</b> Use this software at your own risk, downloading copyrighted material is illegal.
                 </p>""")
 
 
