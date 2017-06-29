@@ -90,3 +90,4 @@ ENV/
 
 # Extra
 _error.log
+_pyinstaller.bat
