@@ -4,5 +4,6 @@ https://yts.ag/rss
 https://eztv.ag/ezrss.xml
 http://7tor.download/RSS/Default.aspx
 http://showrss.info/other/all.rss
+https://www.pirateiro.com/rss.xml
 
 http://feeds.reuters.com/Reuters/worldNews
