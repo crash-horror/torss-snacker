@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
                              QCheckBox, qApp, QMessageBox)
 
 
-version = 0.298
+version = 0.299
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -28,6 +28,7 @@ socket.setdefaulttimeout(5)
 myfilepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "")
 subspath = myfilepath + "tor.subs.txt"
 urlpath = myfilepath + "tor.rsslist.txt"
+gearpath = myfilepath + "tor.config.ini"
 
 CP = configparser.ConfigParser()
 CP.read(myfilepath + 'tor.config.ini', 'utf8')
@@ -304,6 +305,9 @@ class MyMainWindow(QMainWindow):
         linkaction.setShortcut('Ctrl+u')
         linkaction.triggered.connect(self.link_action)
 
+        gearaction = QAction(QIcon('stuff/gear.png'), 'Edit RSS URLs\nCtrl [U]', self)
+        gearaction.triggered.connect(self.gear_action)
+
         scrollaction = QCheckBox('Scroll', self)
         scrollaction.toggle()
         scrollaction.setShortcut('Ctrl+s')
@@ -327,6 +331,7 @@ class MyMainWindow(QMainWindow):
         self.toolbar.addSeparator()
         self.toolbar.addAction(editaction)
         self.toolbar.addAction(linkaction)
+        self.toolbar.addAction(gearaction)
 
         self.spacer = QWidget()
         self.spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -470,6 +475,13 @@ class MyMainWindow(QMainWindow):
             os.startfile(urlpath)
         else:
             subprocess.call(["xdg-open", urlpath])
+
+
+    def gear_action(self):
+        if sys.platform == "win32":
+            os.startfile(gearpath)
+        else:
+            subprocess.call(["xdg-open", gearpath])
 
 
     def info_action(self):
