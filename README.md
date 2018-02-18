@@ -3,7 +3,7 @@ Scan in an easy to read list, RSS feeds for torrents, magnet links and more.
 
 The list will update every 5 minutes, so leave it running.
 
-![Imgur](http://i.imgur.com/LaO1B5N.png)
+![Imgur](https://i.imgur.com/f2s8h4P.png)
 
 
 ----------
@@ -15,8 +15,9 @@ The list will update every 5 minutes, so leave it running.
  - If <b>DotOnly</b> is selected, the list will only highlight items with.dots.instead.of.spaces.like.this.
  - If <b>Mags</b> is selected, clicking will prioritize <b>direct magnet download</b> instead of webpage.
  - If <b>Scroll</b> is selected, the list will auto scroll on update.
-
-
+ - Type in the textbox to <b>filter</b> items in the list.
+ - Ctrl + Shift plus or minus controls <b>window opacity</b>.
+ 
 ----------
 
 
@@ -25,7 +26,7 @@ The list will update every 5 minutes, so leave it running.
 
 
 ----------
-Edit <b>tor.config.ini</b> file to set options:
+Use <b>gearbox button</b> to set options (separate with commas):
 
  - Green list items.
  - Red list items.
