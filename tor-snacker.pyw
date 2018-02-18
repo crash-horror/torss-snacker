@@ -12,6 +12,7 @@ import webbrowser
 import codecs
 import feedparser
 import pickle
+from multiprocessing.dummy import Pool as ThreadPool
 from PyQt5.QtGui import QIcon, QFont, QColor, QIntValidator
 from PyQt5.QtCore import QTimer, Qt, QThread, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTrayIcon,
@@ -20,7 +21,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
                              QFormLayout, QDialogButtonBox)
 
 
-version = 0.312
+version = 0.323
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -34,7 +35,7 @@ picklepath = myfilepath + "data.pkl"
 
 
 
-class PickleData():
+class PickleData:
 
     def __init__(self):
         self.onlydotmatchdefault = False
@@ -287,10 +288,14 @@ class MyDataClass():
         with codecs.open(urlpath, "r", 'utf-8', errors='ignore') as readurllist:
             thelines = readurllist.readlines()
         for i in thelines:
-            if len(i) > 1:
+            if len(i) > 2 and i[0] != '#':
                 urllist.append(i.strip())
         self.urllist = urllist
         return self.urllist
+
+
+    def url_list_length(self):
+        return len(self.urllist)
 
 
     def get_subscriptions(self):
@@ -304,7 +309,8 @@ class MyDataClass():
             if not mySettings.pickledict['dotmatch']:
                 i = i.strip()
                 if i != '' and i.strip()[0] != '#':
-                    sublist.append(i + ' ')
+                    # sublist.append(i + ' ')
+                    sublist.append(i)
 
             # subscribed dot matched only
             i = ".".join(i.split()) + '.'  # spaces to dots + a dot
@@ -316,14 +322,10 @@ class MyDataClass():
 
 
     def get_xml(self, _alist):
-        ls = []
-        for url in _alist:
+        def looping(_url):
             counter = 0
-            try:
-                d = feedparser.parse(url)
-            except:
-                print(url, '\nNot accessible!')
-                logger.exception('get_xml exception')
+            d = feedparser.parse(_url)
+
             while True:
 
                 try:
@@ -340,11 +342,11 @@ class MyDataClass():
                 except IndexError:
                     break
 
-                if 'magnet:?' in link:
+                if link is not None and 'magnet:?' in link:
                     magnet = link
 
                 try:
-                    ls.append((d.entries[counter].published, d.feed.title, d.entries[counter].title, link, magnet))
+                    self.feed_list.append((d.entries[counter].published, d.feed.title, d.entries[counter].title, link, magnet))
                 except IndexError:  # check until end of feed
                     break
                 except AttributeError:
@@ -353,8 +355,25 @@ class MyDataClass():
                     counter += 1
 
 
-        self.feed_list = ls[::-1]
+        # single thread (deprecated)############################
+        # for url in _alist:
+        #     try:
+        #         looping(url)
+        #     except:
+        #         print(url, '\nNot accessible!')
+        #         logger.exception('get_xml exception')
+        ########################################################
+
+
+        # multi thread pool ####################################
+        pool = ThreadPool(myData.url_list_length())
+        pool.map(looping, _alist)
+        pool.close()
+        pool.join()
+        ########################################################
+
         return self.feed_list
+
 
 
     def return_subscriptions(self):
@@ -410,11 +429,11 @@ class MyMainWindow(QMainWindow):
                                                         background-color: #303030;
                                                         }
                                             QListWidget::item:selected:active {
-                                                        background-color: #999999;
+                                                        background-color: #fff;
                                                         color: #000000;
                                                         }
                                             QListWidget::item:selected:!active {
-                                                        background-color: #505050;
+                                                        background-color: #aaa;
                                                         }
                                                             """)
 
@@ -664,7 +683,6 @@ class MyMainWindow(QMainWindow):
 
 
     def info_action(self):
-
         QMessageBox.about(self, "About '" + title + "'",
                 """
                 <h3>Usage instructions and stuff:</h3>
@@ -762,7 +780,5 @@ if __name__ == '__main__':
 
 # Notes:
 """
-
-
 pyinstaller --paths C:\Python35\Lib\site-packages\PyQt5\Qt\bin -w -F --icon=stuff/tor.ico tor-snacker.pyw
 """
