@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
                              QFormLayout, QDialogButtonBox)
 
 
-version = 0.323
+version = 0.325
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -120,7 +120,6 @@ class OptionDialog(QDialog):
         self.setWindowTitle('Options')
         self.setFont(QFont("Arial", 12))
 
-
         flo = QFormLayout()
 
         self.redoption = QLineEdit(self)
@@ -162,7 +161,6 @@ class OptionDialog(QDialog):
         self.buttonBox.rejected.connect(self.reject)
         self.setLayout(flo)
 
-
     def accept(self):
         print('save pressed')
         mySettings.pickledict['green'] = mySettings.greentemp
@@ -199,7 +197,6 @@ class OptionDialog(QDialog):
         mySettings.refreshtemp = abs(int(_text))
 
 
-
 class mySystemTrayIcon(QSystemTrayIcon):
 
     def __init__(self, icon, parent=None):
@@ -215,7 +212,6 @@ class mySystemTrayIcon(QSystemTrayIcon):
 
         self.setContextMenu(self.menu)
         self.setToolTip(title + ' v' + str(version))
-
 
 
 class Worker(QObject):
@@ -272,7 +268,6 @@ class Worker(QObject):
                 t0 = time.time()
 
 
-
 class MyDataClass():
 
     def __init__(self):
@@ -281,7 +276,6 @@ class MyDataClass():
         self.urllist = []
         self.get_subscriptions()
         self.get_url_list()
-
 
     def get_url_list(self):
         urllist = []
@@ -351,6 +345,7 @@ class MyDataClass():
                     break
                 except AttributeError:
                     logger.exception('get_xml exception AttributeError')
+                    break  ## abort the feed if errors ################################################
                 else:
                     counter += 1
 
@@ -372,6 +367,7 @@ class MyDataClass():
         pool.join()
         ########################################################
 
+        self.feed_list = self.feed_list[::-1]
         return self.feed_list
 
 
