@@ -24,6 +24,7 @@ The list will update every 5 minutes, so leave it running.
  - If you have <b>peerflix</b> installed you can select an item with a magnet (by right-clicking on the list)
                                and pressing the peerflix/vlc button on the toolbar to play it.
                                If you don't have it, get it <a href='https://github.com/mafintosh/peerflix'>Here</a>
+ - If you do not have <b>peerflix</b> installed the buttons and options will not appear.
 ----------
 
 
