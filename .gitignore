@@ -93,6 +93,4 @@ _error.log
 _pyinstaller.bat
 .idea/
 _old unused/
-tor.rsslist.txt
-tor.subs.txt
 data.pkl
