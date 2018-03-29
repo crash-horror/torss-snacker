@@ -826,10 +826,13 @@ class MyMainWindow(QMainWindow):
 
 
 def check_if_peerflix_installed():
-    proc = subprocess.check_output(['where', 'peerflix'], shell=True)
-    if 'peerflix' in proc.decode():
-        return True
-    else:
+    try:
+        proc = subprocess.check_output(['where', 'peerflix'], shell=True)
+        if 'peerflix' in proc.decode():
+            return True
+        else:
+            return False
+    except:
         return False
 
 
