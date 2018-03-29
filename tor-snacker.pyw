@@ -786,7 +786,6 @@ class MyMainWindow(QMainWindow):
                               <li>If you have <b>peerflix</b> installed you can select an item with a magnet (by right-clicking on the list)
                                and pressing the peerflix/vlc button on the toolbar to play it.
                                If you don't have it, get it <a href='https://github.com/mafintosh/peerflix'>Here</a></li>
-                              <li>If you do not have <b>peerflix</b> installed the buttons and options will not appear.</li>
                               <br>
                               <li><b>Edit Subscriptions</b> to blue-highlight your favorites.</li>
                               <li><b>Edit RSS URLs</b> to set your RSS sources (one per line).</li>
@@ -826,14 +825,16 @@ class MyMainWindow(QMainWindow):
 
 
 def check_if_peerflix_installed():
-    try:
-        proc = subprocess.check_output(['where', 'peerflix'], shell=True)
-        if 'peerflix' in proc.decode():
-            return True
-        else:
-            return False
-    except:
-        return False
+    # this doesnt work with pyinstaller - bypass it and always return True
+    return True
+    # try:
+    #     proc = subprocess.check_output(['where', 'peerflix'], shell=True)
+    #     if 'peerflix' in proc.decode():
+    #         return True
+    #     else:
+    #         return False
+    # except:
+    #     return False
 
 
 def list_to_string(_alist):
