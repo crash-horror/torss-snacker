@@ -18,10 +18,10 @@ from PyQt5.QtCore import QTimer, Qt, QThread, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTrayIcon,
                              QWidget, QSizePolicy, QMenu, QAction, QListWidgetItem,
                              QCheckBox, qApp, QMessageBox, QLineEdit, QDialog,
-                             QFormLayout, QDialogButtonBox)
+                             QFormLayout, QDialogButtonBox, QPushButton, QFileDialog)
 
 
-version = 0.325
+version = 0.333
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -42,11 +42,12 @@ class PickleData:
         self.greendefault = ['rarbg', 'rartv']
         self.purpledefault = ['cm8', 'fgt']
         self.reddefault = ['yts',]
-        self.yellowdefault = ['news', 'ελλάδα']
+        self.yellowdefault = ['news', 'ελλάδα', 'alert']
         self.greydefault = ['eztv',]
         self.refreshdefault = 5
         self.fontdefault = 19
         self.opacitydefault = 0.8
+        self.peerflixpathdefault = None
         self.check_if_pickle_file()
         self.debug_print()
 
@@ -71,6 +72,7 @@ class PickleData:
         self.pickledict['refresh'] = self.refreshdefault
         self.pickledict['fontsize'] = self.fontdefault
         self.pickledict['opacity'] = self.opacitydefault
+        self.pickledict['peerflixpath'] = self.peerflixpathdefault
 
     def set_temp_variables(self):
         self.greentemp = self.pickledict['green']
@@ -79,6 +81,7 @@ class PickleData:
         self.yellowtemp = self.pickledict['yellow']
         self.greytemp = self.pickledict['grey']
         self.refreshtemp = self.pickledict['refresh']
+        self.peerflixpathtemp = self.pickledict['peerflixpath']
 
     def write_pickle_data(self):
         with open(picklepath, 'wb') as f:
@@ -110,6 +113,9 @@ class PickleData:
 
     def refresh_setting(self):
         return self.pickledict['refresh']
+
+    def peerflix_path(self):
+        return self.pickledict['peerflixpath']
 
 
 
@@ -154,12 +160,29 @@ class OptionDialog(QDialog):
         self.refreshoption.textChanged.connect(self.refreshtextchanged)
         flo.addRow("Refresh every", self.refreshoption)
 
+        if myGUI.peerflix_is_installed:
+            self.peerflixpathbutton = QPushButton('Peerflix path')
+            self.peerflixpathbutton.clicked.connect(self.peerflix_button_clicked)
+            self.peerflixpathtext = QLineEdit(self)
+            self.peerflixpathtext.setText(mySettings.peerflix_path())
+            self.peerflixpathtext.setReadOnly(True)
+            self.peerflixpathtext.setFrame(False)
+            flo.addRow(self.peerflixpathbutton, self.peerflixpathtext)
+
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Save)
         flo.addRow(self.buttonBox)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
         self.setLayout(flo)
+
+
+    def peerflix_button_clicked(self):
+        tempflixpath = str(QFileDialog.getExistingDirectory(self, "Select Peerflix Download Directory"))
+        print(tempflixpath)  ## <----------------------------------------------------------------------------------DEBUG
+        mySettings.peerflixpathtemp = tempflixpath
+        self.peerflixpathtext.setText(tempflixpath)
+
 
     def accept(self):
         print('save pressed')
@@ -169,6 +192,7 @@ class OptionDialog(QDialog):
         mySettings.pickledict['yellow'] = mySettings.yellowtemp
         mySettings.pickledict['grey'] = mySettings.greytemp
         mySettings.pickledict['refresh'] = mySettings.refreshtemp
+        mySettings.pickledict['peerflixpath'] = mySettings.peerflixpathtemp
         mySettings.write_pickle_data()
         self.close()
 
@@ -214,6 +238,18 @@ class mySystemTrayIcon(QSystemTrayIcon):
         self.setToolTip(title + ' v' + str(version))
 
 
+
+class PflixWorker(QObject):
+    finished = pyqtSignal()
+    @pyqtSlot()
+    def play_me(self):
+        if mySettings.peerflix_path() is None:
+            osstring = 'peerflix --vlc ' + myGUI.buttonbuffer
+        else:
+            osstring = 'peerflix --vlc -d -r -f "' + mySettings.peerflix_path() +'" '+ myGUI.buttonbuffer
+        os.system(osstring)
+
+
 class Worker(QObject):
 
     finished = pyqtSignal()
@@ -238,6 +274,7 @@ class Worker(QObject):
             self.feedready.emit(initial)
 
         self.statusupdate.emit()
+        self.addclock.emit(time_string())
 
         while True:
             time.sleep(refreshtime)
@@ -276,6 +313,7 @@ class MyDataClass():
         self.urllist = []
         self.get_subscriptions()
         self.get_url_list()
+
 
     def get_url_list(self):
         urllist = []
@@ -390,6 +428,9 @@ class MyMainWindow(QMainWindow):
         self.deffontsize = mySettings.font_setting()
         self.autoscroll = True
         self.auto_open_magnets = True
+        self.buttonbuffer = None
+        self.peerflix_is_installed = False
+        self.myclipboard = QApplication.clipboard()
         # 1 - create Worker and Thread inside the Form
         self.obj = Worker()  # no parent!
         self.thread = QThread()  # no parent!
@@ -408,6 +449,19 @@ class MyMainWindow(QMainWindow):
         # self.thread.finished.connect(app.exit)
         # 6 - Start the thread
         self.thread.start()
+
+        ## peerflix player thread #############################################
+        self.obj2 = PflixWorker()  # no parent!
+        self.thread2 = QThread()  # no parent!
+        # 3 - Move the Worker object to the Thread object
+        self.obj2.moveToThread(self.thread2)
+        # 4 - Connect Worker Signals to the Thread slots
+        self.obj2.finished.connect(self.thread2.quit)
+        # 5 - Connect Thread started signal to Worker operational slot method
+        self.thread2.started.connect(self.obj2.play_me)
+        #######################################################################
+
+
         # 7 - Start the form
         self.initUI()
 
@@ -415,6 +469,7 @@ class MyMainWindow(QMainWindow):
     def initUI(self):
         self.mylistwidget = QListWidget()
         self.mylistwidget.itemClicked.connect(self.list_item_clicked)
+        self.mylistwidget.currentItemChanged.connect(self.list_item_selected)
         self.mylistwidget.setStyleSheet("""
                                             QListWidget {
                                                         border-style: none;
@@ -479,12 +534,20 @@ class MyMainWindow(QMainWindow):
         infoaction = QAction(QIcon('stuff/info.png'), 'About', self)
         infoaction.triggered.connect(self.info_action)
 
-        textbox = QLineEdit()
-        textbox.setPlaceholderText("Type to filter entries")
-        textbox.setFrame(False)
-        textbox.textChanged.connect(self.textchanged)
+        self.textbox = QLineEdit()
+        self.textbox.setPlaceholderText("Type to filter entries")
+        self.textbox.setFrame(False)
+        self.textbox.textChanged.connect(self.textchanged)
+
+        clearaction = QAction(QIcon('stuff/x.png'), 'Clear Text', self)
+        clearaction.triggered.connect(self.clear_text_field)
+
+
+        flixbutton = QPushButton('peerflix/vlc')
+        flixbutton.clicked.connect(self.play_in_peerflix)
 
         self.toolbar = self.addToolBar('Buttons!')
+        self.spacer = QWidget()
         self.toolbar.addAction(plusaction)
         self.toolbar.addAction(minusaction)
         self.toolbar.addSeparator()
@@ -492,9 +555,14 @@ class MyMainWindow(QMainWindow):
         self.toolbar.addAction(linkaction)
         self.toolbar.addAction(gearaction)
 
-        self.toolbar.addWidget(textbox)
+        self.toolbar.addWidget(self.textbox)
+        self.toolbar.addAction(clearaction)
 
-        self.spacer = QWidget()
+        if check_if_peerflix_installed():
+            self.peerflix_is_installed = True
+            self.toolbar.addSeparator()
+            self.toolbar.addWidget(flixbutton)
+
         self.spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.toolbar.addWidget(self.spacer)
 
@@ -539,6 +607,23 @@ class MyMainWindow(QMainWindow):
                 webbrowser.open(item.data(201))
             else:
                 webbrowser.open(item.data(200))
+
+
+    def list_item_selected(self, item):
+        if len(item.text()) > 10:
+            self.buttonbuffer = item.data(201)
+            if self.buttonbuffer is not None:
+                self.myclipboard.setText(self.buttonbuffer)
+
+
+    def play_in_peerflix(self):
+        if self.buttonbuffer is not None:
+            if self.thread2.isRunning():
+                self.thread2.quit()
+                if self.thread2.isRunning():
+                    QMessageBox.warning(self, title, 'PEERFLIX is already running.<br>Close peerflix to open a new stream.')
+            else:
+                self.thread2.start()
 
 
     def populate_me(self, _feed):
@@ -608,6 +693,10 @@ class MyMainWindow(QMainWindow):
                 self.mylistwidget.setRowHidden(i, False)
         if _text == "":
             self.scroll_action()
+
+
+    def clear_text_field(self):
+        self.textbox.clear()
 
 
     def scroll_action(self):
@@ -680,39 +769,46 @@ class MyMainWindow(QMainWindow):
 
     def info_action(self):
         QMessageBox.about(self, "About '" + title + "'",
-                """
-                <h3>Usage instructions and stuff:</h3>
-                <ul>
-                    <li><b>Click</b> on a list item to open browser or magnet link.</li>
-                    <li>One <b>*</b> means the feed has magnet link and info webpage.</li>
-                    <li>Two <b>**</b> means the feed has <b>only</b> magnet link.</li>
-                    <li><b>High Def</b> links appear brighter (720p & 1080p).</li>
-                    <li>If <b>DotOnly</b> is selected, the list will only highlight items with.dots.instead.of.spaces.like.this.</li>
-                    <li>If <b>Mags</b> is selected, clicking will prioritize <b>direct magnet download</b> instead of webpage.</li>
-                    <li>If <b>Scroll</b> is selected, the list will auto scroll on update.</li>
-                    <li>Type in the textbox to filter items in the list.</li>
-                    <li>Ctrl + Shift plus or minus controls window opacity.</li>
-                    <br>
-                    <li><b>Edit Subscriptions</b> to blue-highlight your favorites.</li>
-                    <li><b>Edit RSS URLs</b> to set your RSS sources (one per line).</li>
-                    <br>
-                    <li>Use <b>gearbox button</b> to set options (separate with commas):
-                        <ul>
-                            <li>Green list items.</li>
-                            <li>Red list items.</li>
-                            <li>Yellow list items.</li>
-                            <li>Gray list items.</li>
-                            <li>Purple list items.</li>
-                            <li>Set the <b>refresh interval</b> (default = 5 minutes).</li>
-                        </ul>
-                    </li>
-                </ul>
-                <h3>
-                    <a href='https://github.com/crash-horror/torss-snacker'>Buy me a beer!</a> (scroll to the bottom.)
-                </h3>
-                <p>
-                    <b>Disclaimer:</b> Use this software at your own risk, downloading copyrighted material is illegal.
-                </p>""")
+                          """
+                          <h3>Usage instructions and stuff:</h3>
+                          <ul>
+                              <li><b>Click</b> on a list item to open browser or magnet link.</li>
+                              <li>One <b>*</b> means the feed has magnet link and info webpage.</li>
+                              <li>Two <b>**</b> means the feed has <b>only</b> magnet link.</li>
+                              <li><b>High Def</b> links appear brighter (720p & 1080p).</li>
+                              <li>If <b>DotOnly</b> is selected, the list will only highlight items with.dots.instead.of.spaces.like.this.</li>
+                              <li>If <b>Mags</b> is selected, clicking will prioritize <b>direct magnet download</b> instead of webpage.</li>
+                              <li>Right clicking copies magnet link to the clipboard.</li>
+                              <li>If <b>Scroll</b> is selected, the list will auto scroll on update.</li>
+                              <li>Type in the textbox to filter items in the list.</li>
+                              <li>Ctrl + Shift plus or minus controls window opacity.</li>
+                              <br>
+                              <li>If you have <b>peerflix</b> installed you can select an item with a magnet (by right-clicking on the list)
+                               and pressing the peerflix/vlc button on the toolbar to play it.
+                               If you don't have it, get it <a href='https://github.com/mafintosh/peerflix'>Here</a></li>
+                              <li>If you do not have <b>peerflix</b> installed the buttons and options will not appear.</li>
+                              <br>
+                              <li><b>Edit Subscriptions</b> to blue-highlight your favorites.</li>
+                              <li><b>Edit RSS URLs</b> to set your RSS sources (one per line).</li>
+                              <br>
+                              <li>Use <b>gearbox button</b> to set options (separate with commas):
+                                  <ul>
+                                      <li>Green list items.</li>
+                                      <li>Red list items.</li>
+                                      <li>Yellow list items.</li>
+                                      <li>Gray list items.</li>
+                                      <li>Purple list items.</li>
+                                      <li>Set the <b>refresh interval</b> (default = 5 minutes).</li>
+                                      <li>Set the peerflix download folder path.</li>
+                                  </ul>
+                              </li>
+                          </ul>
+                          <h3>
+                              <a href='https://github.com/crash-horror/torss-snacker'>Buy me a beer!</a> (scroll to the bottom.)
+                          </h3>
+                          <p>
+                              <b>Disclaimer:</b> Use this software at your own risk, downloading copyrighted material is illegal.
+                          </p>""")
 
 
     def add_warning(self, _text):
@@ -728,6 +824,13 @@ class MyMainWindow(QMainWindow):
             self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
             self.activateWindow()
 
+
+def check_if_peerflix_installed():
+    proc = subprocess.check_output(['where', 'peerflix'], shell=True)
+    if 'peerflix' in proc.decode():
+        return True
+    else:
+        return False
 
 
 def list_to_string(_alist):

@@ -14,10 +14,17 @@ The list will update every 5 minutes, so leave it running.
  - <b>High Def</b> links appear brighter (720p & 1080p).
  - If <b>DotOnly</b> is selected, the list will only highlight items with.dots.instead.of.spaces.like.this.
  - If <b>Mags</b> is selected, clicking will prioritize <b>direct magnet download</b> instead of webpage.
+ - Right clicking copies magnet link to the clipboard.
  - If <b>Scroll</b> is selected, the list will auto scroll on update.
  - Type in the textbox to <b>filter</b> items in the list.
  - Ctrl + Shift plus or minus controls <b>window opacity</b>.
  
+----------
+
+ - If you have <b>peerflix</b> installed you can select an item with a magnet (by right-clicking on the list)
+                               and pressing the peerflix/vlc button on the toolbar to play it.
+                               If you don't have it, get it <a href='https://github.com/mafintosh/peerflix'>Here</a>
+ - If you do not have <b>peerflix</b> installed the buttons and options will not appear.
 ----------
 
 
@@ -34,7 +41,7 @@ Use <b>gearbox button</b> to set options (separate with commas):
  - Gray list items.
  - Purple list items.
  - Set the <b>refresh interval</b> (default = 5 minutes).
-
+ - Set the peerflix download folder path.
 
 ----------
 
