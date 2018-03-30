@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
                              QFormLayout, QDialogButtonBox, QPushButton, QFileDialog)
 
 
-version = 0.333
+version = 0.335
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -34,10 +34,10 @@ picklepath = myfilepath + "data.pkl"
 
 
 
-
 class PickleData:
 
     def __init__(self):
+        # todo clean this mess, maybe...
         self.onlydotmatchdefault = False
         self.greendefault = ['rarbg', 'rartv']
         self.purpledefault = ['cm8', 'fgt']
@@ -46,10 +46,9 @@ class PickleData:
         self.greydefault = ['eztv',]
         self.refreshdefault = 5
         self.fontdefault = 19
-        self.opacitydefault = 0.8
+        self.opacitydefault = 1.0
         self.peerflixpathdefault = None
         self.check_if_pickle_file()
-        self.debug_print()
 
     def check_if_pickle_file(self):
         if os.path.isfile(picklepath):
@@ -86,9 +85,6 @@ class PickleData:
     def write_pickle_data(self):
         with open(picklepath, 'wb') as f:
             pickle.dump(self.pickledict, f)
-
-    def debug_print(self):
-        print(self.pickledict)
 
     def opacity_setting(self):
         return self.pickledict['opacity']
@@ -228,6 +224,8 @@ class mySystemTrayIcon(QSystemTrayIcon):
         QSystemTrayIcon.__init__(self, icon, parent)
         self.menu = QMenu(parent)
 
+        # todo add options 'option'
+
         infoaction = self.menu.addAction(QIcon('stuff/info.png'), "About")
         infoaction.triggered.connect(myGUI.info_action)
 
@@ -240,7 +238,9 @@ class mySystemTrayIcon(QSystemTrayIcon):
 
 
 class PflixWorker(QObject):
+
     finished = pyqtSignal()
+
     @pyqtSlot()
     def play_me(self):
         if mySettings.peerflix_path() is None:
@@ -305,7 +305,7 @@ class Worker(QObject):
                 t0 = time.time()
 
 
-class MyDataClass():
+class MyDataClass:
 
     def __init__(self):
         self.subscribe_tor = []
@@ -361,6 +361,13 @@ class MyDataClass():
             while True:
 
                 try:
+                    publishedentry = d.entries[counter].published
+                except AttributeError:
+                    publishedentry = None
+                except IndexError:
+                    break
+
+                try:
                     magnet = d.entries[counter].torrent_magneturi
                 except AttributeError:
                     magnet = None
@@ -378,36 +385,22 @@ class MyDataClass():
                     magnet = link
 
                 try:
-                    self.feed_list.append((d.entries[counter].published, d.feed.title, d.entries[counter].title, link, magnet))
+                    self.feed_list.append((publishedentry, d.feed.title, d.entries[counter].title, link, magnet))
                 except IndexError:  # check until end of feed
                     break
                 except AttributeError:
-                    logger.exception('get_xml exception AttributeError')
-                    break  ## abort the feed if errors ################################################
+                    logger.exception('get_xml exception AttributeError at ' + _url)
+                    break  # also abort the feed if errors ################################################
                 else:
                     counter += 1
 
-
-        # single thread (deprecated)############################
-        # for url in _alist:
-        #     try:
-        #         looping(url)
-        #     except:
-        #         print(url, '\nNot accessible!')
-        #         logger.exception('get_xml exception')
-        ########################################################
-
-
-        # multi thread pool ####################################
         pool = ThreadPool(myData.url_list_length())
         pool.map(looping, _alist)
         pool.close()
         pool.join()
-        ########################################################
 
         self.feed_list = self.feed_list[::-1]
         return self.feed_list
-
 
 
     def return_subscriptions(self):
@@ -460,7 +453,6 @@ class MyMainWindow(QMainWindow):
         # 5 - Connect Thread started signal to Worker operational slot method
         self.thread2.started.connect(self.obj2.play_me)
         #######################################################################
-
 
         # 7 - Start the form
         self.initUI()
@@ -826,11 +818,24 @@ class MyMainWindow(QMainWindow):
 
 
 def check_if_peerflix_installed():
-    proc = subprocess.check_output(['where', 'peerflix'], shell=True, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
-    if 'peerflix' in proc.decode():
-        return True
+    if os.name == 'nt':
+        try:
+            proc = subprocess.check_output(['where', 'peerflix'], shell=True, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+            if 'peerflix' in proc.decode():
+                return True
+            else:
+                return False
+        except subprocess.CalledProcessError:
+            return False
     else:
-        return False
+        try:
+            proc = subprocess.check_output(['which', 'peerflix'], shell=False, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+            if 'peerflix' in proc.decode():
+                return True
+            else:
+                return False
+        except subprocess.CalledProcessError:
+            return False
 
 
 def list_to_string(_alist):
@@ -877,7 +882,8 @@ if __name__ == '__main__':
     sys.exit(app.exec_())
 
 
+# todo highlight color picker
 # Notes:
 """
-pyinstaller --paths C:\Python35\Lib\site-packages\PyQt5\Qt\bin -w -F --icon=stuff/tor.ico tor-snacker.pyw
+pyinstaller -w -F --icon=stuff/tor.ico tor-snacker.pyw
 """
