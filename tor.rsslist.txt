@@ -5,3 +5,4 @@ https://eztv.ag/ezrss.xml
 http://showrss.info/other/all.rss
 
 http://feeds.reuters.com/Reuters/worldNews
+https://www.reddit.com/r/Python/.rss

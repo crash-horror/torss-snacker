@@ -42,6 +42,7 @@ Use <b>gearbox button</b> to set options (separate with commas):
  - Purple list items.
  - Set the <b>refresh interval</b> (default = 5 minutes).
  - Set the peerflix download folder path.
+ - Set the WebTorrent executable path.
 
 ----------
 
