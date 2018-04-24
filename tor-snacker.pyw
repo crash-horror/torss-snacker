@@ -21,7 +21,9 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
                              QFormLayout, QDialogButtonBox, QPushButton, QFileDialog)
 
 
-version = 0.335
+
+
+version = 0.342
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -48,6 +50,7 @@ class PickleData:
         self.fontdefault = 19
         self.opacitydefault = 1.0
         self.peerflixpathdefault = None
+        self.webtorrentpathdefault = None
         self.check_if_pickle_file()
 
     def check_if_pickle_file(self):
@@ -72,6 +75,7 @@ class PickleData:
         self.pickledict['fontsize'] = self.fontdefault
         self.pickledict['opacity'] = self.opacitydefault
         self.pickledict['peerflixpath'] = self.peerflixpathdefault
+        self.pickledict['webtorrentpath'] = self.webtorrentpathdefault
 
     def set_temp_variables(self):
         self.greentemp = self.pickledict['green']
@@ -81,6 +85,7 @@ class PickleData:
         self.greytemp = self.pickledict['grey']
         self.refreshtemp = self.pickledict['refresh']
         self.peerflixpathtemp = self.pickledict['peerflixpath']
+        self.webtorrentpathtemp = self.pickledict['webtorrentpath']
 
     def write_pickle_data(self):
         with open(picklepath, 'wb') as f:
@@ -112,6 +117,9 @@ class PickleData:
 
     def peerflix_path(self):
         return self.pickledict['peerflixpath']
+
+    def webtorrent_path(self):
+        return self.pickledict['webtorrentpath']
 
 
 
@@ -165,6 +173,14 @@ class OptionDialog(QDialog):
             self.peerflixpathtext.setFrame(False)
             flo.addRow(self.peerflixpathbutton, self.peerflixpathtext)
 
+        self.webtorrentpathbutton = QPushButton('WebTorrent path')
+        self.webtorrentpathbutton.clicked.connect(self.webtorrent_button_clicked)
+        self.webtorrentpathtext = QLineEdit(self)
+        self.webtorrentpathtext.setText(mySettings.webtorrent_path())
+        self.webtorrentpathtext.setReadOnly(True)
+        self.webtorrentpathtext.setFrame(False)
+        flo.addRow(self.webtorrentpathbutton, self.webtorrentpathtext)
+
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Save)
         flo.addRow(self.buttonBox)
@@ -175,10 +191,13 @@ class OptionDialog(QDialog):
 
     def peerflix_button_clicked(self):
         tempflixpath = str(QFileDialog.getExistingDirectory(self, "Select Peerflix Download Directory"))
-        print(tempflixpath)  ## <----------------------------------------------------------------------------------DEBUG
         mySettings.peerflixpathtemp = tempflixpath
         self.peerflixpathtext.setText(tempflixpath)
 
+    def webtorrent_button_clicked(self):
+        webtorrentpath, _ = QFileDialog.getOpenFileName(self, "Select WebTorrent Executable", "WebTorrent.exe", "Executable Files (*.exe)")
+        mySettings.webtorrentpathtemp = webtorrentpath
+        self.webtorrentpathtext.setText(webtorrentpath)
 
     def accept(self):
         print('save pressed')
@@ -189,6 +208,7 @@ class OptionDialog(QDialog):
         mySettings.pickledict['grey'] = mySettings.greytemp
         mySettings.pickledict['refresh'] = mySettings.refreshtemp
         mySettings.pickledict['peerflixpath'] = mySettings.peerflixpathtemp
+        mySettings.pickledict['webtorrentpath'] = mySettings.webtorrentpathtemp
         mySettings.write_pickle_data()
         self.close()
 
@@ -224,7 +244,7 @@ class mySystemTrayIcon(QSystemTrayIcon):
         QSystemTrayIcon.__init__(self, icon, parent)
         self.menu = QMenu(parent)
 
-        # todo add options 'option'
+        # todo add options 'option' :D
 
         infoaction = self.menu.addAction(QIcon('stuff/info.png'), "About")
         infoaction.triggered.connect(myGUI.info_action)
@@ -247,6 +267,16 @@ class PflixWorker(QObject):
             osstring = 'peerflix --vlc ' + myGUI.buttonbuffer
         else:
             osstring = 'peerflix --vlc -d -r -f "' + mySettings.peerflix_path() +'" '+ myGUI.buttonbuffer
+        os.system(osstring)
+
+
+class WTorrentWorker(QObject):
+
+    finished = pyqtSignal()
+
+    @pyqtSlot()
+    def play_me(self):
+        osstring = mySettings.webtorrent_path() +' "'+ myGUI.buttonbuffer + '"'
         os.system(osstring)
 
 
@@ -454,6 +484,17 @@ class MyMainWindow(QMainWindow):
         self.thread2.started.connect(self.obj2.play_me)
         #######################################################################
 
+        ## webtorrent player thread ###########################################
+        self.obj3 = WTorrentWorker()  # no parent!
+        self.thread3 = QThread()  # no parent!
+        # 3 - Move the Worker object to the Thread object
+        self.obj3.moveToThread(self.thread3)
+        # 4 - Connect Worker Signals to the Thread slots
+        self.obj3.finished.connect(self.thread3.quit)
+        # 5 - Connect Thread started signal to Worker operational slot method
+        self.thread3.started.connect(self.obj3.play_me)
+        #######################################################################
+
         # 7 - Start the form
         self.initUI()
 
@@ -534,9 +575,11 @@ class MyMainWindow(QMainWindow):
         clearaction = QAction(QIcon('stuff/x.png'), 'Clear Text', self)
         clearaction.triggered.connect(self.clear_text_field)
 
-
         flixbutton = QPushButton('peerflix/vlc')
         flixbutton.clicked.connect(self.play_in_peerflix)
+
+        wtorrentbutton = QPushButton('webtorrent')
+        wtorrentbutton.clicked.connect(self.play_in_webtorrent)
 
         self.toolbar = self.addToolBar('Buttons!')
         self.spacer = QWidget()
@@ -554,6 +597,10 @@ class MyMainWindow(QMainWindow):
             self.peerflix_is_installed = True
             self.toolbar.addSeparator()
             self.toolbar.addWidget(flixbutton)
+
+        # todo fix this so the button to appear does not require a restart if you just added the path to options
+        if mySettings.webtorrent_path() is not None:
+            self.toolbar.addWidget(wtorrentbutton)
 
         self.spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.toolbar.addWidget(self.spacer)
@@ -616,6 +663,13 @@ class MyMainWindow(QMainWindow):
                     QMessageBox.warning(self, title, 'PEERFLIX is already running.<br>Close peerflix to open a new stream.')
             else:
                 self.thread2.start()
+
+    def play_in_webtorrent(self):
+        if self.buttonbuffer is not None:
+            if self.thread3.isRunning():
+                self.thread3.quit()
+            else:
+                self.thread3.start()
 
 
     def populate_me(self, _feed):
@@ -792,6 +846,7 @@ class MyMainWindow(QMainWindow):
                                       <li>Purple list items.</li>
                                       <li>Set the <b>refresh interval</b> (default = 5 minutes).</li>
                                       <li>Set the peerflix download folder path.</li>
+                                      <li>Set the WebTorrent executable path.</li>
                                   </ul>
                               </li>
                           </ul>
@@ -872,6 +927,9 @@ if __name__ == '__main__':
     myData = MyDataClass()
 
     app = QApplication(sys.argv)
+
+    app.setStyle('Fusionef')
+
     myGUI = MyMainWindow()
 
     trayIcon = mySystemTrayIcon(QIcon("stuff/tor.png"), myGUI)
