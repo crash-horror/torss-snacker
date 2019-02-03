@@ -2,6 +2,8 @@
 # tor-snacker.pyw
 # github.com/crash-horror
 
+
+# pylint: disable=no-name-in-module
 import os
 import sys
 import subprocess
@@ -10,9 +12,9 @@ import socket
 import logging
 import webbrowser
 import codecs
-import feedparser
-import pickle
 from multiprocessing.dummy import Pool as ThreadPool
+import pickle
+import feedparser
 from PyQt5.QtGui import QIcon, QFont, QColor, QIntValidator
 from PyQt5.QtCore import QTimer, Qt, QThread, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTrayIcon,
@@ -23,7 +25,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
 
 
 
-version = 0.342
+version = 0.366
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -40,7 +42,6 @@ class PickleData:
 
     def __init__(self):
         # todo clean this mess, maybe...
-        self.onlydotmatchdefault = False
         self.greendefault = ['rarbg', 'rartv']
         self.purpledefault = ['cm8', 'fgt']
         self.reddefault = ['yts',]
@@ -49,8 +50,6 @@ class PickleData:
         self.refreshdefault = 5
         self.fontdefault = 19
         self.opacitydefault = 1.0
-        self.peerflixpathdefault = None
-        self.webtorrentpathdefault = None
         self.check_if_pickle_file()
 
     def check_if_pickle_file(self):
@@ -65,7 +64,6 @@ class PickleData:
 
     def create_default_dict(self):
         self.pickledict = {}
-        self.pickledict['dotmatch'] = self.onlydotmatchdefault
         self.pickledict['green'] = self.greendefault
         self.pickledict['purple'] = self.purpledefault
         self.pickledict['red'] = self.reddefault
@@ -74,8 +72,6 @@ class PickleData:
         self.pickledict['refresh'] = self.refreshdefault
         self.pickledict['fontsize'] = self.fontdefault
         self.pickledict['opacity'] = self.opacitydefault
-        self.pickledict['peerflixpath'] = self.peerflixpathdefault
-        self.pickledict['webtorrentpath'] = self.webtorrentpathdefault
 
     def set_temp_variables(self):
         self.greentemp = self.pickledict['green']
@@ -84,8 +80,6 @@ class PickleData:
         self.yellowtemp = self.pickledict['yellow']
         self.greytemp = self.pickledict['grey']
         self.refreshtemp = self.pickledict['refresh']
-        self.peerflixpathtemp = self.pickledict['peerflixpath']
-        self.webtorrentpathtemp = self.pickledict['webtorrentpath']
 
     def write_pickle_data(self):
         with open(picklepath, 'wb') as f:
@@ -115,11 +109,7 @@ class PickleData:
     def refresh_setting(self):
         return self.pickledict['refresh']
 
-    def peerflix_path(self):
-        return self.pickledict['peerflixpath']
 
-    def webtorrent_path(self):
-        return self.pickledict['webtorrentpath']
 
 
 
@@ -164,23 +154,6 @@ class OptionDialog(QDialog):
         self.refreshoption.textChanged.connect(self.refreshtextchanged)
         flo.addRow("Refresh every", self.refreshoption)
 
-        if myGUI.peerflix_is_installed:
-            self.peerflixpathbutton = QPushButton('Peerflix path')
-            self.peerflixpathbutton.clicked.connect(self.peerflix_button_clicked)
-            self.peerflixpathtext = QLineEdit(self)
-            self.peerflixpathtext.setText(mySettings.peerflix_path())
-            self.peerflixpathtext.setReadOnly(True)
-            self.peerflixpathtext.setFrame(False)
-            flo.addRow(self.peerflixpathbutton, self.peerflixpathtext)
-
-        self.webtorrentpathbutton = QPushButton('WebTorrent path')
-        self.webtorrentpathbutton.clicked.connect(self.webtorrent_button_clicked)
-        self.webtorrentpathtext = QLineEdit(self)
-        self.webtorrentpathtext.setText(mySettings.webtorrent_path())
-        self.webtorrentpathtext.setReadOnly(True)
-        self.webtorrentpathtext.setFrame(False)
-        flo.addRow(self.webtorrentpathbutton, self.webtorrentpathtext)
-
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Save)
         flo.addRow(self.buttonBox)
@@ -188,16 +161,6 @@ class OptionDialog(QDialog):
         self.buttonBox.rejected.connect(self.reject)
         self.setLayout(flo)
 
-
-    def peerflix_button_clicked(self):
-        tempflixpath = str(QFileDialog.getExistingDirectory(self, "Select Peerflix Download Directory"))
-        mySettings.peerflixpathtemp = tempflixpath
-        self.peerflixpathtext.setText(tempflixpath)
-
-    def webtorrent_button_clicked(self):
-        webtorrentpath, _ = QFileDialog.getOpenFileName(self, "Select WebTorrent Executable", "WebTorrent.exe", "Executable Files (*.exe)")
-        mySettings.webtorrentpathtemp = webtorrentpath
-        self.webtorrentpathtext.setText(webtorrentpath)
 
     def accept(self):
         print('save pressed')
@@ -207,8 +170,6 @@ class OptionDialog(QDialog):
         mySettings.pickledict['yellow'] = mySettings.yellowtemp
         mySettings.pickledict['grey'] = mySettings.greytemp
         mySettings.pickledict['refresh'] = mySettings.refreshtemp
-        mySettings.pickledict['peerflixpath'] = mySettings.peerflixpathtemp
-        mySettings.pickledict['webtorrentpath'] = mySettings.webtorrentpathtemp
         mySettings.write_pickle_data()
         self.close()
 
@@ -244,7 +205,11 @@ class mySystemTrayIcon(QSystemTrayIcon):
         QSystemTrayIcon.__init__(self, icon, parent)
         self.menu = QMenu(parent)
 
-        # todo add options 'option' :D
+        toolbaraction = self.menu.addAction(QIcon('stuff/edit.png'), "Toggle Toolbar")
+        toolbaraction.triggered.connect(myGUI.show_hide_toolbar)
+
+        scrollbaraction = self.menu.addAction(QIcon('stuff/edit.png'), "Toggle Scrollbars")
+        scrollbaraction.triggered.connect(myGUI.show_hide_scrollbars)
 
         infoaction = self.menu.addAction(QIcon('stuff/info.png'), "About")
         infoaction.triggered.connect(myGUI.info_action)
@@ -255,29 +220,6 @@ class mySystemTrayIcon(QSystemTrayIcon):
         self.setContextMenu(self.menu)
         self.setToolTip(title + ' v' + str(version))
 
-
-
-class PflixWorker(QObject):
-
-    finished = pyqtSignal()
-
-    @pyqtSlot()
-    def play_me(self):
-        if mySettings.peerflix_path() is None:
-            osstring = 'peerflix --vlc ' + myGUI.buttonbuffer
-        else:
-            osstring = 'peerflix --vlc -d -r -f "' + mySettings.peerflix_path() +'" '+ myGUI.buttonbuffer
-        os.system(osstring)
-
-
-class WTorrentWorker(QObject):
-
-    finished = pyqtSignal()
-
-    @pyqtSlot()
-    def play_me(self):
-        osstring = mySettings.webtorrent_path() +' "'+ myGUI.buttonbuffer + '"'
-        os.system(osstring)
 
 
 class Worker(QObject):
@@ -307,6 +249,7 @@ class Worker(QObject):
         self.addclock.emit(time_string())
 
         while True:
+            print('>>>IGNORING:', myData.return_dont_highlight_list())  #<---------------------DEBUG
             time.sleep(refreshtime)
 
             oldurls = myData.return_url_list()
@@ -335,12 +278,14 @@ class Worker(QObject):
                 t0 = time.time()
 
 
+
 class MyDataClass:
 
     def __init__(self):
         self.subscribe_tor = []
         self.feed_list = []
         self.urllist = []
+        self.bangfilterlist = []
         self.get_subscriptions()
         self.get_url_list()
 
@@ -360,24 +305,39 @@ class MyDataClass:
         return len(self.urllist)
 
 
+    def return_dont_highlight_list(self):
+        return self.bangfilterlist
+
+
     def get_subscriptions(self):
         sublist = []
+        self.bangfilterlist = []  # clear the list, tor.subs.txt contents may have changed
         with codecs.open(subspath, "r", 'utf-8', errors='ignore') as readtodosubs:
             thelines = readtodosubs.readlines()
         for i in thelines:
             i = i.lower()
 
-            # subscribed everything
-            if not mySettings.pickledict['dotmatch']:
-                i = i.strip()
-                if i != '' and i.strip()[0] != '#':
-                    # sublist.append(i + ' ')
-                    sublist.append(i)
+            # do not add lines that start with hashtag '#'
+            # break the loop
+            if i.strip().startswith('#'):
+                continue
 
-            # subscribed dot matched only
+            # add lines with bang '!' to self.bangfilterlist
+            # and then break the loop, we do not add these to subscriptions
+            if i.strip().startswith('!'):
+                self.bangfilterlist.append(i.strip()[1:])
+                continue
+
+            # subscribed everything
+            i = i.strip()
+            if i != '':
+                sublist.append(i)
+
+            # subscribed dotted
             i = ".".join(i.split()) + '.'  # spaces to dots + a dot
             if i.strip() != '.':
                 sublist.append(i)
+
 
         self.subscribe_tor = sublist
         return self.subscribe_tor
@@ -452,7 +412,6 @@ class MyMainWindow(QMainWindow):
         self.autoscroll = True
         self.auto_open_magnets = True
         self.buttonbuffer = None
-        self.peerflix_is_installed = False
         self.myclipboard = QApplication.clipboard()
         # 1 - create Worker and Thread inside the Form
         self.obj = Worker()  # no parent!
@@ -472,35 +431,17 @@ class MyMainWindow(QMainWindow):
         # self.thread.finished.connect(app.exit)
         # 6 - Start the thread
         self.thread.start()
-
-        ## peerflix player thread #############################################
-        self.obj2 = PflixWorker()  # no parent!
-        self.thread2 = QThread()  # no parent!
-        # 3 - Move the Worker object to the Thread object
-        self.obj2.moveToThread(self.thread2)
-        # 4 - Connect Worker Signals to the Thread slots
-        self.obj2.finished.connect(self.thread2.quit)
-        # 5 - Connect Thread started signal to Worker operational slot method
-        self.thread2.started.connect(self.obj2.play_me)
-        #######################################################################
-
-        ## webtorrent player thread ###########################################
-        self.obj3 = WTorrentWorker()  # no parent!
-        self.thread3 = QThread()  # no parent!
-        # 3 - Move the Worker object to the Thread object
-        self.obj3.moveToThread(self.thread3)
-        # 4 - Connect Worker Signals to the Thread slots
-        self.obj3.finished.connect(self.thread3.quit)
-        # 5 - Connect Thread started signal to Worker operational slot method
-        self.thread3.started.connect(self.obj3.play_me)
-        #######################################################################
-
         # 7 - Start the form
         self.initUI()
 
 
     def initUI(self):
         self.mylistwidget = QListWidget()
+
+        # hide scrollbars as default:
+        self.mylistwidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.mylistwidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
         self.mylistwidget.itemClicked.connect(self.list_item_clicked)
         self.mylistwidget.currentItemChanged.connect(self.list_item_selected)
         self.mylistwidget.setStyleSheet("""
@@ -550,7 +491,7 @@ class MyMainWindow(QMainWindow):
         opacityactionplus.triggered.connect(self.set_main_window_opacity_plus)
         self.mylistwidget.addAction(opacityactionplus)
 
-        scrollaction = QCheckBox('Scroll', self)
+        scrollaction = QCheckBox('AutoScroll', self)
         scrollaction.toggle()
         scrollaction.setShortcut('Ctrl+s')
         scrollaction.stateChanged.connect(self.scroll_action_toggle)
@@ -558,11 +499,6 @@ class MyMainWindow(QMainWindow):
         magnetaction = QCheckBox('Mags', self)
         magnetaction.toggle()
         magnetaction.stateChanged.connect(self.magnet_action_toggle)
-
-        dotaction = QCheckBox('DotOnly', self)
-        if mySettings.pickledict['dotmatch']:
-            dotaction.toggle()
-        dotaction.stateChanged.connect(self.dot_action_toggle)
 
         infoaction = QAction(QIcon('stuff/info.png'), 'About', self)
         infoaction.triggered.connect(self.info_action)
@@ -574,12 +510,6 @@ class MyMainWindow(QMainWindow):
 
         clearaction = QAction(QIcon('stuff/x.png'), 'Clear Text', self)
         clearaction.triggered.connect(self.clear_text_field)
-
-        flixbutton = QPushButton('peerflix/vlc')
-        flixbutton.clicked.connect(self.play_in_peerflix)
-
-        wtorrentbutton = QPushButton('webtorrent')
-        wtorrentbutton.clicked.connect(self.play_in_webtorrent)
 
         self.toolbar = self.addToolBar('Buttons!')
         self.spacer = QWidget()
@@ -593,19 +523,10 @@ class MyMainWindow(QMainWindow):
         self.toolbar.addWidget(self.textbox)
         self.toolbar.addAction(clearaction)
 
-        if check_if_peerflix_installed():
-            self.peerflix_is_installed = True
-            self.toolbar.addSeparator()
-            self.toolbar.addWidget(flixbutton)
-
-        # todo fix this so the button to appear does not require a restart if you just added the path to options
-        if mySettings.webtorrent_path() is not None:
-            self.toolbar.addWidget(wtorrentbutton)
 
         self.spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.toolbar.addWidget(self.spacer)
 
-        self.toolbar.addWidget(dotaction)
         self.toolbar.addWidget(magnetaction)
         self.toolbar.addWidget(scrollaction)
         self.toolbar.addAction(infoaction)
@@ -616,6 +537,19 @@ class MyMainWindow(QMainWindow):
         self.setWindowIcon(QIcon('stuff/tor.png'))
         self.setCentralWidget(self.mylistwidget)
         self.show()
+
+
+    def show_hide_toolbar(self):
+        self.toolbar.toggleViewAction().trigger()
+
+
+    def show_hide_scrollbars(self):
+        if self.mylistwidget.verticalScrollBar().isVisible() or self.mylistwidget.horizontalScrollBar().isVisible():
+            self.mylistwidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.mylistwidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        else:
+            self.mylistwidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            self.mylistwidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
 
     def set_main_window_opacity_minus(self):
@@ -653,23 +587,6 @@ class MyMainWindow(QMainWindow):
             self.buttonbuffer = item.data(201)
             if self.buttonbuffer is not None:
                 self.myclipboard.setText(self.buttonbuffer)
-
-
-    def play_in_peerflix(self):
-        if self.buttonbuffer is not None:
-            if self.thread2.isRunning():
-                self.thread2.quit()
-                if self.thread2.isRunning():
-                    QMessageBox.warning(self, title, 'PEERFLIX is already running.<br>Close peerflix to open a new stream.')
-            else:
-                self.thread2.start()
-
-    def play_in_webtorrent(self):
-        if self.buttonbuffer is not None:
-            if self.thread3.isRunning():
-                self.thread3.quit()
-            else:
-                self.thread3.start()
 
 
     def populate_me(self, _feed):
@@ -719,7 +636,11 @@ class MyMainWindow(QMainWindow):
 
         # subscribed
         if any(z in str.lower(_feed[2]) for z in myData.return_subscriptions()):
-            i.setBackground(QColor(0, 0, 250))
+            # omit anithing starting with a bang (in myData.bangfilterlist)
+            if any(z in str.lower(_feed[2]) for z in myData.return_dont_highlight_list()):
+                pass
+            else:
+                i.setBackground(QColor(0, 0, 250))
 
         self.mylistwidget.addItem(i)
         # print(i.text())
@@ -762,14 +683,6 @@ class MyMainWindow(QMainWindow):
             self.auto_open_magnets = True
         else:
             self.auto_open_magnets = False
-
-
-    def dot_action_toggle(self, state):
-        if state == Qt.Checked:
-            mySettings.pickledict['dotmatch'] = True
-        else:
-            mySettings.pickledict['dotmatch'] = False
-        mySettings.write_pickle_data()
 
 
     def add_clock(self, _time):
@@ -822,17 +735,12 @@ class MyMainWindow(QMainWindow):
                               <li>One <b>*</b> means the feed has magnet link and info webpage.</li>
                               <li>Two <b>**</b> means the feed has <b>only</b> magnet link.</li>
                               <li><b>High Def</b> links appear brighter (720p & 1080p).</li>
-                              <li>If <b>DotOnly</b> is selected, the list will only highlight items with.dots.instead.of.spaces.like.this.</li>
                               <li>If <b>Mags</b> is selected, clicking will prioritize <b>direct magnet download</b> instead of webpage.</li>
                               <li>Right clicking copies magnet link to the clipboard.</li>
                               <li>If <b>Scroll</b> is selected, the list will auto scroll on update.</li>
                               <li>Type in the textbox to filter items in the list.</li>
                               <li>Ctrl + Shift plus or minus controls window opacity.</li>
-                              <br>
-                              <li>If you have <b>peerflix</b> installed you can select an item with a magnet (by right-clicking on the list)
-                               and pressing the peerflix/vlc button on the toolbar to play it.
-                               If you don't have it, get it <a href='https://github.com/mafintosh/peerflix'>Here</a></li>
-                               <li>If you do not have <b>peerflix</b> installed the buttons and options will not appear.</li>
+                              <li>You can toggle visibility of the toolbar and scrollbars by right-clicking the tray icon.</li>
                               <br>
                               <li><b>Edit Subscriptions</b> to blue-highlight your favorites.</li>
                               <li><b>Edit RSS URLs</b> to set your RSS sources (one per line).</li>
@@ -845,8 +753,6 @@ class MyMainWindow(QMainWindow):
                                       <li>Gray list items.</li>
                                       <li>Purple list items.</li>
                                       <li>Set the <b>refresh interval</b> (default = 5 minutes).</li>
-                                      <li>Set the peerflix download folder path.</li>
-                                      <li>Set the WebTorrent executable path.</li>
                                   </ul>
                               </li>
                           </ul>
@@ -870,27 +776,6 @@ class MyMainWindow(QMainWindow):
         if reason == QSystemTrayIcon.Trigger:
             self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
             self.activateWindow()
-
-
-def check_if_peerflix_installed():
-    if os.name == 'nt':
-        try:
-            proc = subprocess.check_output(['where', 'peerflix'], shell=True, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
-            if 'peerflix' in proc.decode():
-                return True
-            else:
-                return False
-        except subprocess.CalledProcessError:
-            return False
-    else:
-        try:
-            proc = subprocess.check_output(['which', 'peerflix'], shell=False, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
-            if 'peerflix' in proc.decode():
-                return True
-            else:
-                return False
-        except subprocess.CalledProcessError:
-            return False
 
 
 def list_to_string(_alist):
@@ -927,8 +812,6 @@ if __name__ == '__main__':
     myData = MyDataClass()
 
     app = QApplication(sys.argv)
-
-    app.setStyle('Fusionef')
 
     myGUI = MyMainWindow()
 

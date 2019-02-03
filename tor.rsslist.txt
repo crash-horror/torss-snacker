@@ -1,5 +1,19 @@
+#
+# Instructions for 'tor.rsslist.txt' (this file).
+#
+# Entries in this file are links to rss providers.
+#
+# Type an entry in each line, empty lines are ignored.
+#
+# Lines beginning with the '#' sign are ignored.
+#
+# Have fun!
+#
 
-https://rarbg.to/rss.php?categories=1;14;15;16;17;21;22;42;18;19;41;27;28;29;30;31;32;40;23;24;25;26;33;34;43;44;45;46;47;48
+
+
+
+https://rarbgget.org/rss.php?categories=1;14;15;16;17;21;22;42;18;19;41;27;28;29;30;31;32;40;23;24;25;26;33;34;43;44;45;46;47;48
 https://yts.ag/rss
 https://eztv.ag/ezrss.xml
 http://showrss.info/other/all.rss

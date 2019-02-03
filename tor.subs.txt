@@ -1,36 +1,37 @@
-rectify
+#
+# Instructions for 'tor.subs.txt' (this file).
+#
+# Entries in this file are used to highlight (blue) the snacker list.
+#
+# Type an entry in each line, empty lines are ignored.
+#
+# Lines beginning with the '#' sign are ignored.
+#
+# Lines beginning with the '!' sign are used to exclude entries
+#   from highlighting for example if you have an entry:
+#   'one', an entry like: '!one two three' will prevent
+#   'one two three' from being highlighted.
+#
+# Avoid punctuation.
+#
+# Have fun!
+#
+
+
 game of thrones
 the big bang theory
-the walking dead
-plebs
-vice
-black box
 better call saul
-man in the high castle
 black mirror
 true detective
-aquarius
-Wayward Pines
-mr robot
-Fargo
-The Expanse
-The Night Manager
-Horace and Pete
 westworld
 
 
 star trek
-passengers
-manchester by the sea
-arrival
-Telemark
-mighty eighth
-ghost in the shell
-valerian
 star wars
 
 
-pbs
-nova
-horizon
+
+#this will be ignored
+
+!this will never be highlighted
 

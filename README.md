@@ -18,7 +18,8 @@ The list will update every 5 minutes, so leave it running.
  - If <b>Scroll</b> is selected, the list will auto scroll on update.
  - Type in the textbox to <b>filter</b> items in the list.
  - Ctrl + Shift plus or minus controls <b>window opacity</b>.
- 
+ - You can toggle visibility of the toolbar and scrollbars by right-clicking the <b>tray icon</b>.
+
 ----------
 
  - If you have <b>peerflix</b> installed you can select an item with a magnet (by right-clicking on the list)
@@ -41,8 +42,6 @@ Use <b>gearbox button</b> to set options (separate with commas):
  - Gray list items.
  - Purple list items.
  - Set the <b>refresh interval</b> (default = 5 minutes).
- - Set the peerflix download folder path.
- - Set the WebTorrent executable path.
 
 ----------
 
