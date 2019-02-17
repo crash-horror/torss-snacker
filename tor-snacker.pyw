@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
 
 
 
-version = 0.366
+version = 0.368
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -249,7 +249,7 @@ class Worker(QObject):
         self.addclock.emit(time_string())
 
         while True:
-            print('>>>IGNORING:', myData.return_dont_highlight_list())  #<---------------------DEBUG
+            # print('>>>IGNORING:', myData.return_dont_highlight_list())  #<---------------------DEBUG
             time.sleep(refreshtime)
 
             oldurls = myData.return_url_list()
@@ -509,6 +509,7 @@ class MyMainWindow(QMainWindow):
         self.textbox.textChanged.connect(self.textchanged)
 
         clearaction = QAction(QIcon('stuff/x.png'), 'Clear Text', self)
+        clearaction.setShortcut('Esc')
         clearaction.triggered.connect(self.clear_text_field)
 
         self.toolbar = self.addToolBar('Buttons!')
