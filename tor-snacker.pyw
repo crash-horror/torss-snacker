@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-# tor-snacker.pyw
 # github.com/crash-horror
+# tor-snacker.pyw
 
 
 # pylint: disable=no-name-in-module
@@ -20,12 +19,12 @@ from PyQt5.QtCore import QTimer, Qt, QThread, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTrayIcon,
                              QWidget, QSizePolicy, QMenu, QAction, QListWidgetItem,
                              QCheckBox, qApp, QMessageBox, QLineEdit, QDialog,
-                             QFormLayout, QDialogButtonBox, QPushButton, QFileDialog)
+                             QFormLayout, QDialogButtonBox)
 
 
 
 
-version = 0.368
+version = 0.369
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
