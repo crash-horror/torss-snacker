@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
 
 
 
-version = 0.371
+version = 0.372
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -478,7 +478,6 @@ class MyMainWindow(QMainWindow):
         gearaction = QAction(QIcon('stuff/gear.png'), 'Edit RSS URLs\nCtrl [U]', self)
         gearaction.triggered.connect(self.gear_action)
 
-
         fontactionplus = QAction(self)
         fontactionplus.setShortcut('Ctrl+=')
         fontactionplus.triggered.connect(self.plus_action)
@@ -488,7 +487,6 @@ class MyMainWindow(QMainWindow):
         fontactionminus.setShortcut('Ctrl+-')
         fontactionminus.triggered.connect(self.minus_action)
         self.mylistwidget.addAction(fontactionminus)
-
 
         opacityactionminus = QAction(self)
         opacityactionminus.setShortcut('Ctrl+Shift+-')
@@ -521,7 +519,7 @@ class MyMainWindow(QMainWindow):
         clearaction.setShortcut('Esc')
         clearaction.triggered.connect(self.clear_text_field)
 
-        self.toolbar = self.addToolBar('Buttons!')
+        self.toolbar = self.addToolBar('Toolbar Toggle')
         self.spacer = QWidget()
         self.toolbar.addAction(plusaction)
         self.toolbar.addAction(minusaction)
