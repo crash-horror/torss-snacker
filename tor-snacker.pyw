@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
 
 
 
-version = 0.369
+version = 0.371
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -462,11 +462,9 @@ class MyMainWindow(QMainWindow):
                                                             """)
 
         plusaction = QAction(QIcon('stuff/plus.png'), 'Larger Font\nCtrl [=]', self)
-        plusaction.setShortcut('Ctrl+=')
         plusaction.triggered.connect(self.plus_action)
 
         minusaction = QAction(QIcon('stuff/minus.png'), 'Smaller Font\nCtrl [-]', self)
-        minusaction.setShortcut('Ctrl+-')
         minusaction.triggered.connect(self.minus_action)
 
         editaction = QAction(QIcon('stuff/edit.png'), 'Edit Subscriptions\nCtrl [E]', self)
@@ -479,6 +477,18 @@ class MyMainWindow(QMainWindow):
 
         gearaction = QAction(QIcon('stuff/gear.png'), 'Edit RSS URLs\nCtrl [U]', self)
         gearaction.triggered.connect(self.gear_action)
+
+
+        fontactionplus = QAction(self)
+        fontactionplus.setShortcut('Ctrl+=')
+        fontactionplus.triggered.connect(self.plus_action)
+        self.mylistwidget.addAction(fontactionplus)
+
+        fontactionminus = QAction(self)
+        fontactionminus.setShortcut('Ctrl+-')
+        fontactionminus.triggered.connect(self.minus_action)
+        self.mylistwidget.addAction(fontactionminus)
+
 
         opacityactionminus = QAction(self)
         opacityactionminus.setShortcut('Ctrl+Shift+-')
