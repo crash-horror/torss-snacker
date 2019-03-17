@@ -1,8 +1,8 @@
 # github.com/crash-horror
 # tor-snacker.pyw
 
+# pylint: disable=c
 
-# pylint: disable=no-name-in-module
 import os
 import sys
 import subprocess
@@ -14,6 +14,7 @@ import codecs
 from multiprocessing.dummy import Pool as ThreadPool
 import pickle
 import feedparser
+# pylint: disable=no-name-in-module
 from PyQt5.QtGui import QIcon, QFont, QColor, QIntValidator
 from PyQt5.QtCore import QTimer, Qt, QThread, QObject, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTrayIcon,
@@ -24,7 +25,7 @@ from PyQt5.QtWidgets import (QListWidget, QApplication, QMainWindow, QSystemTray
 
 
 
-version = 0.372
+version = 0.378
 title = 'ToRss Snacker'
 
 socket.setdefaulttimeout(5)
@@ -124,34 +125,34 @@ class OptionDialog(QDialog):
         self.redoption = QLineEdit(self)
         self.redoption.setText(list_to_string(mySettings.red_tor()))
         self.redoption.textChanged.connect(self.redtextchanged)
-        flo.addRow("Red (title)", self.redoption)
+        flo.addRow("Red (Feed title)", self.redoption)
 
         self.greyoption = QLineEdit(self)
         self.greyoption.setText(list_to_string(mySettings.grey_tor()))
         self.greyoption.textChanged.connect(self.greytextchanged)
-        flo.addRow("Grey (title)", self.greyoption)
-
-        self.greenoption = QLineEdit(self)
-        self.greenoption.setText(list_to_string(mySettings.green_tor()))
-        self.greenoption.textChanged.connect(self.greentextchanged)
-        flo.addRow("Green (body)", self.greenoption)
-
-        self.purpleoption = QLineEdit(self)
-        self.purpleoption.setText(list_to_string(mySettings.purple_tor()))
-        self.purpleoption.textChanged.connect(self.purpletextchanged)
-        flo.addRow("Purple (body)", self.purpleoption)
+        flo.addRow("Grey (Feed title)", self.greyoption)
 
         self.yellowoption = QLineEdit(self)
         self.yellowoption.setText(list_to_string(mySettings.yellow_tor()))
         self.yellowoption.textChanged.connect(self.yellowtextchanged)
-        flo.addRow("Yellow (title)", self.yellowoption)
+        flo.addRow("Yellow (Feed title)", self.yellowoption)
+
+        self.greenoption = QLineEdit(self)
+        self.greenoption.setText(list_to_string(mySettings.green_tor()))
+        self.greenoption.textChanged.connect(self.greentextchanged)
+        flo.addRow("Green (Feed text)", self.greenoption)
+
+        self.purpleoption = QLineEdit(self)
+        self.purpleoption.setText(list_to_string(mySettings.purple_tor()))
+        self.purpleoption.textChanged.connect(self.purpletextchanged)
+        flo.addRow("Purple (Feed text)", self.purpleoption)
 
         self.refreshoption = QLineEdit(self)
         self.refreshoption.setText(str(mySettings.refresh_setting()))
         self.refreshoption.setValidator(QIntValidator())
         self.refreshoption.setMaxLength(2)
         self.refreshoption.textChanged.connect(self.refreshtextchanged)
-        flo.addRow("Refresh every", self.refreshoption)
+        flo.addRow("Refresh minutes", self.refreshoption)
 
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Save)
@@ -162,7 +163,7 @@ class OptionDialog(QDialog):
 
 
     def accept(self):
-        print('save pressed')
+        # print('save pressed')  # <--------------------------------DEBUG
         mySettings.pickledict['green'] = mySettings.greentemp
         mySettings.pickledict['purple'] = mySettings.purpletemp
         mySettings.pickledict['red'] = mySettings.redtemp
@@ -173,27 +174,27 @@ class OptionDialog(QDialog):
         self.close()
 
     def greentextchanged(self, _text):
-        print(_text)
+        # print(_text)  # <--------------------------------DEBUG
         mySettings.greentemp = string_to_list(_text)
 
     def purpletextchanged(self, _text):
-        print(_text)
+        # print(_text)  # <--------------------------------DEBUG
         mySettings.purpletemp = string_to_list(_text)
 
     def redtextchanged(self, _text):
-        print(_text)
+        # print(_text)  # <--------------------------------DEBUG
         mySettings.redtemp = string_to_list(_text)
 
     def yellowtextchanged(self, _text):
-        print(_text)
+        # print(_text)  # <--------------------------------DEBUG
         mySettings.yellowtemp = string_to_list(_text)
 
     def greytextchanged(self, _text):
-        print(_text)
+        # print(_text)  # <--------------------------------DEBUG
         mySettings.greytemp = string_to_list(_text)
 
     def refreshtextchanged(self, _text):
-        print(_text)
+        # print(_text)  # <--------------------------------DEBUG
         mySettings.refreshtemp = abs(int(_text))
 
 
@@ -327,16 +328,10 @@ class MyDataClass:
                 self.bangfilterlist.append(i.strip()[1:])
                 continue
 
-            # subscribed everything
+            # subscribed
             i = i.strip()
             if i != '':
                 sublist.append(i)
-
-            # subscribed dotted
-            i = ".".join(i.split()) + '.'  # spaces to dots + a dot
-            if i.strip() != '.':
-                sublist.append(i)
-
 
         self.subscribe_tor = sublist
         return self.subscribe_tor
@@ -475,7 +470,7 @@ class MyMainWindow(QMainWindow):
         linkaction.setShortcut('Ctrl+u')
         linkaction.triggered.connect(self.link_action)
 
-        gearaction = QAction(QIcon('stuff/gear.png'), 'Edit RSS URLs\nCtrl [U]', self)
+        gearaction = QAction(QIcon('stuff/gear.png'), 'Edit RSS URLs', self)
         gearaction.triggered.connect(self.gear_action)
 
         fontactionplus = QAction(self)
@@ -643,17 +638,19 @@ class MyMainWindow(QMainWindow):
             i.setForeground(QColor(150, 100, 0))
 
         # subscribed
-        if any(z in str.lower(_feed[2]) for z in myData.return_subscriptions()):
-            # omit anithing starting with a bang (in myData.bangfilterlist)
-            if any(z in str.lower(_feed[2]) for z in myData.return_dont_highlight_list()):
+        # sanitizedfeed: replace hyphens and periods so it can highlight properly
+        sanitizedfeed = _feed[2].replace("-", " ").replace(".", " ")
+        if any(z in str.lower(sanitizedfeed) for z in myData.return_subscriptions()):
+            # omit anything starting with a bang (in myData.bangfilterlist)
+            if any(z in str.lower(sanitizedfeed) for z in myData.return_dont_highlight_list()):
                 pass
             else:
                 i.setBackground(QColor(0, 0, 250))
 
         self.mylistwidget.addItem(i)
-        # print(i.text())
-        # print(i.data(200))
-        # print(i.data(201))
+        # print(i.text())     # <--------------------------------DEBUG
+        # print(i.data(200))  # <--------------------------------DEBUG
+        # print(i.data(201))  # <--------------------------------DEBUG
         self.scroll_action()
 
 
